@@ -50,7 +50,9 @@ def scroll_shim(passed_in_driver, object):
 
 def image_search(driver, query, depth=1, see_more=False, timeout=10, initial_id=0):
 	driver.find_element_by_name('q').send_keys(query, Keys.ENTER)
-	element = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.CLASS_NAME, "mM5pbd")))
+	element = WebDriverWait(driver, timeout) \
+		.until(EC.presence_of_element_located((By.CLASS_NAME, "mM5pbd")))
+
 	time.sleep(1)
 	driver.get(driver.current_url)
 
@@ -67,10 +69,12 @@ def image_search(driver, query, depth=1, see_more=False, timeout=10, initial_id=
 		#photo.click()
 		photo.send_keys(Keys.ENTER)
 
-		main = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.CLASS_NAME, "n3VNCb")))
+		main = WebDriverWait(driver, timeout) \
+			.until(EC.presence_of_element_located((By.CLASS_NAME, "n3VNCb")))
 
 		src = main.get_attribute('src')
-		while (not src.startswith('http')) or (src.startswith('https://encrypted-tbn0.gstatic.com/images?')):
+		while (not src.startswith('http')) or \
+		(src.startswith('https://encrypted-tbn0.gstatic.com/images?')):
 			time.sleep(0.5)
 			src = main.get_attribute('src')
 
