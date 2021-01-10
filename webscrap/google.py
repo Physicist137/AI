@@ -1,16 +1,27 @@
 from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
 import time
 
 
 def get_webdriver(headless=True):
 	profile = webdriver.FirefoxProfile()
 	profile.set_preference('intl.accept_languages', 'en-US, en')
-	driver = webdriver.Firefox(firefox_profile=profile)
+
+	if headless == True:
+		opts = Options()
+		opts.set_headless()
+		assert opts.headless
+		driver = webdriver.Firefox(firefox_profile=profile, options=opts)
+
+	else:
+		driver = webdriver.Firefox(firefox_profile=profile)
+
+
 	return driver
 
 
