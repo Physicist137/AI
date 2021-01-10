@@ -48,7 +48,7 @@ def scroll_shim(passed_in_driver, object):
 	passed_in_driver.execute_script(scroll_nav_out_of_way)
 
 
-def image_search(driver, query, depth=1, see_more=False, timeout=10, initial_id=0):
+def query_image_from_google(query, driver, timeout=60):
 	driver.find_element_by_name('q').send_keys(query, Keys.ENTER)
 	element = WebDriverWait(driver, timeout) \
 		.until(EC.presence_of_element_located((By.CLASS_NAME, "mM5pbd")))
@@ -56,12 +56,19 @@ def image_search(driver, query, depth=1, see_more=False, timeout=10, initial_id=
 	time.sleep(1)
 	driver.get(driver.current_url)
 
+
+def get_images_from_google(driver, level=1, amount=48, \
+timeout=60, init_id=0, from_id=0):
+	# Get google page url.
 	page_url = driver.current_url
-	photos = driver.find_elements_by_class_name('mM5pbd')
+
+	# Get the specified amount of photos.
+	photos = driver.find_elements_by_class_name('mM5pbd')[:amount]
 
 	results = []
 
-	i = initial_id
+	i = init_id
+	
 	for photo in photos:
 		actions = ActionChains(driver)
 		scroll_shim(driver, photo)
@@ -86,7 +93,9 @@ def image_search(driver, query, depth=1, see_more=False, timeout=10, initial_id=
 
 		data = {
 			"id" : i,
-			"level" : 1,
+			"from" : from_id,
+			"level" : level,
+			"page" : page_url,
 			"alt" : alt,
 			"src" : src,
 			"url" : url,
@@ -97,5 +106,68 @@ def image_search(driver, query, depth=1, see_more=False, timeout=10, initial_id=
 
 
 	return results
+
+
+# Collected images at each level will be: amount^level.
+# Total amount of collected images will be O(amount^(depth+1)).
+# Due to the insane exponential nature depending on depth, use with great care.
+def image_search(query, driver, depth=1, amount=48, timeout=60):
+	# Make the query.
+	query_image_from_google(query, driver, timeout)
+
+	# Get images in the first level
+	current_level = 1
+	results = get_images_from_google(
+		driver = driver,
+		level = 1,
+		amount = amount,
+		timeout = timeout,
+		init_id = 1
+	)
+
+	# Get images from the next levels.
+	current_level += 1
+
+	while current_level <= depth:
+		init_id = results[-1]['id'] + 1
+		level_results = []
+		for result in results:
+			if result['level'] == current_level - 1:
+				# Go to webpage.
+				driver.get(result['url'])
+
+				# Get see more link text element.
+				# see_more = driver.find_element_by_link_text('See more')
+				see_more = WebDriverWait(driver, timeout).until(
+					EC.presence_of_element_located(
+						(By.LINK_TEXT, 'See more')
+					)
+				)
+
+				# Load page.
+				# see_more.click()
+				driver.get(see_more.get_attribute('href'))
+				time.sleep(1)
+
+				# Get all the images.
+				intermediate = get_images_from_google(
+					driver = driver,
+					level = current_level,
+					amount = amount,
+					timeout = timeout,
+					init_id = init_id,
+					from_id = result['id']
+				)
+
+				init_id = intermediate[-1]['id'] + 1
+				level_results += intermediate
+
+
+		results += level_results
+		current_level += 1
+	
+
+	return results
+
 
 
