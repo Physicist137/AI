@@ -20,7 +20,16 @@ class Layer:
 		elif isinstance(activation, str):
 			if activation == 'sigmoid':
 				self.activation = Activation.sigmoid
-				self.derivative = Activation.dasigmoid
+				self.derivative = Activation.da_sigmoid
+			elif activation == 'tanh':
+				self.activation = Activation.tanh
+				self.derivative = Activation.da_tanh
+			elif activation == 'relu':
+				self.activation = Activation.relu
+				self.derivative = Activation.da_relu
+			elif activation == 'leaky_relu':
+				self.activation = Activation.leaky_relu
+				self.derivative = Activation.da_leaky_relu
 			else:
 				raise IncorrectConfiguration("Invalid activation")
 			
@@ -36,16 +45,6 @@ class Layer:
 		return "Layer(units={})".format(self.units)
 
 		
-	# Sigmoid activation.
-	def sigmoid(self, z): return 1.0 / (1.0 + np.exp(-z))
-	def drsigmoid(self, z): return z*(1-z)
-
-	# Tanh activation.
-	def tanh(self, z): return np.tanh(z)
-	def drtanh(self, z): return 1 - z*z;
-	
-
-
 class NeuralNetwork:
 	def __init__(self, features, initialization=0.01, learning_rate=0.01):
 		self.init = initialization

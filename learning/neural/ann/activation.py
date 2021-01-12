@@ -10,17 +10,29 @@ class Activation:
 		)
 	
 	@staticmethod
-	def dasigmoid(a):
+	def da_sigmoid(a):
 		return a*(1-a)
 	
 	
 	# Tanh Activation Function.
 	@staticmethod
 	def tanh(z): return np.tanh(z)
-
 	@staticmethod
-	def datanh(a): return 1 - a*a;
+	def da_tanh(a): return 1 - a*a
 
+
+	# Rectified Linear Unit
+	@staticmethod
+	def relu(z): return np.where(z >= 0, a, 0.0)
+	@staticmethod
+	def da_relu(z): return np.where(z >= 0, 1.0, 0.0)
+
+
+	# Leaky Rectified Linear Unit
+	@staticmethod
+	def leaky_relu(z): return np.where(z >= 0, a, 0.01*a)
+	@staticmethod
+	def da_leaky_relu(z): return np.where(z >= 0, 1.0, 0.01)
 
 
 # Useful links.
