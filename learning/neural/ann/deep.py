@@ -1,3 +1,4 @@
+import scipy.io
 import numpy as np
 from learning.neural.ann.activation import Activation
 
@@ -21,21 +22,30 @@ class Layer:
 			if activation == 'sigmoid':
 				self.activation = Activation.sigmoid
 				self.derivative = Activation.da_sigmoid
+				self.function = 'sigmoid'
 			elif activation == 'tanh':
 				self.activation = Activation.tanh
 				self.derivative = Activation.da_tanh
+				self.function = 'tanh'
 			elif activation == 'relu':
 				self.activation = Activation.relu
 				self.derivative = Activation.da_relu
+				self.function = 'relu'
 			elif activation == 'leaky_relu':
 				self.activation = Activation.leaky_relu
 				self.derivative = Activation.da_leaky_relu
+				self.function = 'leaky_relu'
+			elif activation == 'identity'  or  activation == 'none':
+				self.activation = Activation.identity
+				self.derivative = Activation.da_identity
+				self.function = 'leaky_relu'
 			else:
 				raise IncorrectConfiguration("Invalid activation")
 			
 		elif callable(activation)  and  callable(derivative):
 			self.activation = activation
 			self.derivative = derivative
+			self.function = None
 
 		else:
 			raise IncorrectConfiguration("Invalid Layer configuration")
@@ -47,12 +57,55 @@ class Layer:
 		
 class NeuralNetwork:
 	def __init__(self, features, initialization=0.01, learning_rate=0.01):
+		# Hyperparameters
 		self.init = initialization
 		self.learning_rate = learning_rate
+
+		# Counting of parameters and input features.
+		self.parameters = 0
 		self.features = features
+
+		# Learning parameters
 		self.layers = []
 		self.w = []
 		self.b = []
+
+
+	def save_model(self, filename, do_compression=False):
+		activations = []
+		for layer in self.layers: 
+			if layer.function is None:
+				activations.append('none')
+				print("WARNING: You have custom activations that weren't saved")
+				print("When loading, you will have to add them manually")
+			else: activations.append(layer.function)
+
+		data = {
+			'activations' : activations,
+			'w' : self.w,
+			'b' : self.b
+		}
+
+		scipy.io.savemat(filename, data, do_compression=do_compression)
+
+
+	def load_model(self, filename):
+		data = scipy.io.loadmat(filename)
+		self.w = data['w']
+		self.b = data['b']
+		activations = data['activations']
+		self.features = self.w[0].shape[1]
+		self.parameters = 0
+
+		L = len(self.b)
+		for l in range(0, L):
+			self.layers.append(Layer(
+				activation=activations[l],
+				units=self.b[l].size
+			))
+
+			self.parameters += self.w[l].size + self.b[l].size
+
 
 
 	def add_layer(self, layer=None, activation=None, derivative=None, units=0):
@@ -62,11 +115,13 @@ class NeuralNetwork:
 
 		# Randomly initialize the parameters of the layer.
 		if len(self.layers) == 1:
+			self.parameters += self.layers[0].units * (self.features + 1)
 			b = np.zeros((self.layers[0].units, 1), dtype=np.float64)
 			w = self.init * np.random.randn(
 				self.layers[0].units, self.features
 			).astype('float64')
 		else:
+			self.parameters += self.layers[-1].units * (self.layers[-2].units + 1)
 			b = np.zeros((self.layers[-1].units, 1), dtype=np.float64)
 			w = self.init * np.random.randn(
 				self.layers[-1].units, self.layers[-2].units
