@@ -1,4 +1,5 @@
 import numpy as np
+from learning.neural.ann.activation import Activation
 
 class IncorrectConfiguration(Exception): pass
 
@@ -18,8 +19,8 @@ class Layer:
 		
 		elif isinstance(activation, str):
 			if activation == 'sigmoid':
-				self.activation = self.sigmoid
-				self.derivative = self.drsigmoid
+				self.activation = Activation.sigmoid
+				self.derivative = Activation.dasigmoid
 			else:
 				raise IncorrectConfiguration("Invalid activation")
 			

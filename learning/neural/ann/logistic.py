@@ -1,5 +1,6 @@
 import scipy.io
 import numpy as np
+from learning.neural.ann.activation import Activation
 
 class WrongLabel(Exception): pass
 
@@ -50,14 +51,18 @@ class Logistic:
 		self.b = x['parameters']['b']
 		self.data = x['training']['data']
 		self.labels = x['training']['labels']
-
+	
+	@staticmethod
 	def sigmoid(self, z):
-		return 1.0 / (1 + np.exp(-z))
+		return np.where(z >= 0,
+			1.0 / (1 + np.exp(-z)),
+			np.exp(z)  / (1.0 + np.exp(z))
+		)
 	
 	def forward_propagation(self, feature):
 		if self.w is None: return None
 		if self.b is None: return None
-		return self.sigmoid(np.dot(feature, self.w) + self.b)
+		return Activation.sigmoid(np.dot(feature, self.w) + self.b)
 	
 	def backward_propagation(self, feature, labels):
 		a = self.forward_propagation(feature, labels)
@@ -81,7 +86,7 @@ class Logistic:
 	def forward_data(self):
 		ww = self.w.reshape(1, self.w.size)
 		z = np.dot(ww, self.data) + self.b
-		return self.sigmoid(z.reshape(z.size))
+		return Activation.sigmoid(z.reshape(z.size))
 	
 	def backward_data(self):
 		a = self.forward_data().reshape(1, self.labels.size)
