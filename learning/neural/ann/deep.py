@@ -46,12 +46,13 @@ class Layer:
 
 
 class NeuralNetwork:
-	def __init__(self, features):
-		self.init = 0.01
-		self.features features
+	def __init__(self, features, initialization=0.01, learning_rate=0.01):
+		self.init = initialization
+		self.learning_rate = learning_rate
+		self.features = features
 		self.layers = []
-		self.w = np.array([])
-		self.b = np.array([])
+		self.w = []
+		self.b = []
 
 
 	def add_layer(self, layer=None, activation=None, derivative=None, units=0):
@@ -61,16 +62,69 @@ class NeuralNetwork:
 
 		# Randomly initialize the parameters of the layer.
 		if len(self.layers) == 1:
-			b = np.zeros((self.layers[0].units, 1))
-			w = self.init * np.random.randn(self.layers[0].units, features)
+			b = np.zeros((self.layers[0].units, 1), dtype=np.float64)
+			w = self.init * np.random.randn(
+				self.layers[0].units, self.features
+			).astype('float64')
 		else:
-			b = np.zeros((self.layers[-1].units, 1))
+			b = np.zeros((self.layers[-1].units, 1), dtype=np.float64)
 			w = self.init * np.random.randn(
 				self.layers[-1].units, self.layers[-2].units
-			)
+			).astype('float64')
 	
 		# Append layer parameters.
-		self.w = np.append(self.w, w)
-		self.b = np.append(self.b, b)
+		self.w.append(w)
+		self.b.append(b)
 	
+
+	def forward_propagation(self, feature, acache=False):
+		if acache == False:
+			a = feature
+			for l in range(0, len(self.layers)):
+				z = np.dot(self.w[l], a) + self.b[l]
+				a = self.layers[l].activation(z)
+	
+			return a
+	
+		if acache == True:
+			cache = []
+			a = feature
+			for l in range(0, len(self.layers)):
+				z = np.dot(self.w[l], a) + self.b[l]
+				a = self.layers[l].activation(z)
+				cache.append(a)
+
+			cache.append(feature)
+			return a, cache
+	
+
+	def backward_propagation(self, label, acache):
+		# This assumes last unit is sigmoid. FIX this.
+		#das = label / acache[L-1] + (1-label) / (1-acache[L-1])
+		#da = np.sum(das, axis=0, keepdims=True)
+		L = len(self.layers)
+		dz = acache[L-1] - label
+
+		wcache = [0] * len(self.w)
+		bcache = [0] * len(self.b)
+		for l in reversed(range(0, len(self.layers))):
+			if (l != L-1): dz = da * self.layers[l].derivative(acache[l])
+			dw = np.dot(dz, acache[l-1].T)
+			db = np.sum(dz, axis=1, keepdims=True)
+			da = np.dot(self.w[l].T, dz)
+
+			wcache[l] = dw
+			bcache[l] = db
+
+		return wcache, bcache
+	
+
+	def train_iteration(self, feature, label, num=1):
+		for k in range(0, num):
+			a, acache = self.forward_propagation(feature, acache=True)
+			dw, db = self.backward_propagation(label, acache)
+
+			for l in range(0, len(self.w)):
+				self.w[l] -= self.learning_rate * dw[l]
+				self.b[l] -= self.learning_rate * db[l]
 
