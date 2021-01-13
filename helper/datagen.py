@@ -6,14 +6,12 @@ import matplotlib
 class DataGenerator:
 	def __init__(self):
 		self.distributions = []
-		self.amount = 0
 
 	def add_multivariate_normal(self, mean=np.array([0,0]), covariance=None, label=0):
-		
-		# Make sure mean is linear.
+		# Make sure mean is a rank-1 tensor.
 		assert len(mean.shape) == 1
 
-		# Use unit covariance
+		# Use identity covariance if there's none.
 		if covariance == None: covariance = np.eye(mean.size)
 
 		# Save the distribution.
@@ -23,11 +21,40 @@ class DataGenerator:
 			'covariance' : covariance,
 			'label' : label
 		})
-
-		self.amount += 1
 	
+	
+	def find_index_of_label(self, label):
+		indices = []
+		for i in range(0, len(self.distributions)):
+			if self.distributions[i]['label'] == label: indices.append(i)
+
+		return None
+	
+
+	def generate_from_distribution(self, index):
+		if self.distributions[index]['type'] == 'multivariate_normal':
+			return np.random.multivariate_normal(
+				self.distributions[index]['mean'],
+				self.distributions[index]['covariance']
+			)
+
+
+	def generate_from_label(self, label=None):
+		if isinstance(label, type(self.labels[0])):
+			indices = self.find_index_of_label(label)
+			if indices is None: return None
+
+			rand = np.random.randint(0, len(indices))
+			index = indices[rand]
+			return generate_from_distribution(index)
+
+		else:
+			index = np.random.randint(0, len(self.distributions))
+			return generate_from_distribution(index)
+			
+		
 	def generate_data(self, amount=10):
-		each = int(np.ceil(amount / self.amount))
+		each = int(np.ceil(amount / len(self.distributions)))
 		points = []
 		labels = []
 
@@ -40,22 +67,6 @@ class DataGenerator:
 				))
 				labels += [distribution['label']] * each
 
-		return np.concatenate(points), np.array(labels).T
-	
-
-	@staticmethod
-	def visualize_data_2D(data, labels):
-		x = data.T[0]
-		y = data.T[1]
-		colors = ['blue', 'orange']
-
-		fig = plt.figure(figsize=(8,8))
-		plt.scatter(
-			x, y, 
-			c=labels, 
-			cmap=matplotlib.colors.ListedColormap(colors)
-		)
-
-		plt.show()
+		return np.concatenate(points).T, np.array(labels).T
 	
 
