@@ -28,7 +28,8 @@ class DataGenerator:
 		for i in range(0, len(self.distributions)):
 			if self.distributions[i]['label'] == label: indices.append(i)
 
-		return None
+		if len(indices) != 0: return indices
+		else: return None
 	
 
 	def generate_from_distribution(self, index):
@@ -40,17 +41,17 @@ class DataGenerator:
 
 
 	def generate_from_label(self, label=None):
-		if isinstance(label, type(self.labels[0])):
+		if isinstance(label, type(self.distributions[0]['label'])):
 			indices = self.find_index_of_label(label)
 			if indices is None: return None
 
 			rand = np.random.randint(0, len(indices))
 			index = indices[rand]
-			return generate_from_distribution(index)
+			return self.generate_from_distribution(index)
 
 		else:
 			index = np.random.randint(0, len(self.distributions))
-			return generate_from_distribution(index)
+			return self.generate_from_distribution(index)
 			
 		
 	def generate_data(self, amount=10):

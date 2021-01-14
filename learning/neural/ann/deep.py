@@ -134,6 +134,22 @@ class NeuralNetwork:
 		self.w.append(w)
 		self.b.append(b)
 	
+	
+	def cost_function(self, data=None, labels=None, prediction=None):
+		# Get data.
+		if data is not None: prediction = self.forward_propagation(data)
+		if labels is None: raise ValueError("Labels is needed")
+		
+		# Compute number of training examples.
+		if len(labels.shape) == 1: m = 1
+		else: m = labels.shape[1]
+		
+		# Compute the logistic cost.
+		yes = -np.sum(labels * np.log(prediction), axis=1, keepdims=True) / m
+		no = -np.sum((1-labels) * np.log(1-prediction), axis=1, keepdims=True) / m
+		return yes+no
+
+	
 
 	def forward_propagation(self, feature, acache=False):
 		if acache == False:
