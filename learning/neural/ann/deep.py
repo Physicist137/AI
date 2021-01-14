@@ -38,7 +38,7 @@ class Layer:
 			elif activation == 'identity'  or  activation == 'none':
 				self.activation = Activation.identity
 				self.derivative = Activation.da_identity
-				self.function = 'leaky_relu'
+				self.function = 'identity'
 			else:
 				raise IncorrectConfiguration("Invalid activation")
 			
@@ -61,8 +61,9 @@ class NeuralNetwork:
 		self.init = initialization
 		self.learning_rate = learning_rate
 
-		# Counting of parameters and input features.
+		# Counting of parameters, units, and input features.
 		self.parameters = 0
+		self.units = 0
 		self.features = features
 
 		# Learning parameters
@@ -115,12 +116,14 @@ class NeuralNetwork:
 
 		# Randomly initialize the parameters of the layer.
 		if len(self.layers) == 1:
+			self.units += self.layers[0].units
 			self.parameters += self.layers[0].units * (self.features + 1)
 			b = np.zeros((self.layers[0].units, 1), dtype=np.float64)
 			w = self.init * np.random.randn(
 				self.layers[0].units, self.features
 			).astype('float64')
 		else:
+			self.units += self.layers[0].units
 			self.parameters += self.layers[-1].units * (self.layers[-2].units + 1)
 			b = np.zeros((self.layers[-1].units, 1), dtype=np.float64)
 			w = self.init * np.random.randn(
@@ -160,12 +163,15 @@ class NeuralNetwork:
 		L = len(self.layers)
 		dz = acache[L-1] - label
 
+		if len(label.shape) == 1: m = 1
+		else: m = label.shape[1]
+
 		wcache = [0] * len(self.w)
 		bcache = [0] * len(self.b)
 		for l in reversed(range(0, len(self.layers))):
 			if (l != L-1): dz = da * self.layers[l].derivative(acache[l])
-			dw = np.dot(dz, acache[l-1].T)
-			db = np.sum(dz, axis=1, keepdims=True)
+			dw = np.dot(dz, acache[l-1].T) / m
+			db = np.sum(dz, axis=1, keepdims=True) / m
 			da = np.dot(self.w[l].T, dz)
 
 			wcache[l] = dw

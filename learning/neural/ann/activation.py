@@ -23,14 +23,14 @@ class Activation:
 
 	# Rectified Linear Unit
 	@staticmethod
-	def relu(z): return np.where(z >= 0, a, 0.0)
+	def relu(z): return np.where(z >= 0, z, 0.0)
 	@staticmethod
 	def da_relu(z): return np.where(z >= 0, 1.0, 0.0)
 
 
 	# Leaky Rectified Linear Unit
 	@staticmethod
-	def leaky_relu(z): return np.where(z >= 0, a, 0.01*a)
+	def leaky_relu(z): return np.where(z >= 0, z, 0.01*z)
 	@staticmethod
 	def da_leaky_relu(z): return np.where(z >= 0, 1.0, 0.01)
 

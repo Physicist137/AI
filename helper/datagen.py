@@ -68,5 +68,5 @@ class DataGenerator:
 				labels += [distribution['label']] * each
 
 		return np.concatenate(points).T, np.array(labels).T
-	
+
 
