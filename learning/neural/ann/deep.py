@@ -205,3 +205,68 @@ class NeuralNetwork:
 				self.w[l] -= self.learning_rate * dw[l]
 				self.b[l] -= self.learning_rate * db[l]
 
+
+
+	def gradient_checking(self, data, labels, epsilon=1e-5, detail=False):
+		# Run forward and backpropagation to compute the derivatives.
+		current_cost = self.cost_function(data, labels)
+		a, acache = self.forward_propagation(data, acache=True)
+		dw, db = self.backward_propagation(labels, acache)
+	
+		# Detailed data for gradient checking.
+		flat_num_grad = []
+		flat_back_grad = []
+		info = []
+		
+		# Run gradient checking for b-weight.
+		for l in range(0, len(self.b)):
+			for i in range(0, self.b[l].size):
+				# Compute both ends.
+				self.b[l][i] += epsilon
+				forward = self.cost_function(data, labels)
+				self.b[l][i] -= 2*epsilon
+				previous = self.cost_function(data, labels)
+				self.b[l][i] += epsilon
+				
+				# Compute gradient and compare
+				grad = (forward - previous) / (2 * epsilon)
+				
+				# Save it.
+				flat_num_grad.append(grad)
+				flat_back_grad.append(db[l].reshape(db[l].size)[i])
+				info.append(('b', [l, i]))
+
+
+		# Run gradient checking for w-weight.
+		for l in range(0, len(self.w)):
+			for i in range(0, self.w[l].shape[0]):
+				for j in range(0, self.w[l].shape[1]):
+					# Compute both ends.
+					self.w[l][i][j] += epsilon
+					forward = self.cost_function(data, labels)
+					self.w[l][i][j] -= 2*epsilon
+					previous = self.cost_function(data, labels)
+					self.w[l][i][j] += epsilon
+					
+					# Compute gradient and compare
+					grad = (forward - previous) / (2 * epsilon)
+					
+					# Save it.
+					flat_num_grad.append(grad)
+					flat_back_grad.append(dw[l][i][j])
+					info.append(('w', [l, i, j]))
+		
+		# Flatten out. [FIX THIS: Numerical gradient should have more entries shall last layer has more units]
+		back_gradient = np.array(flat_back_grad).reshape(len(flat_back_grad))
+		numerical_gradient = np.array(flat_num_grad).reshape(len(flat_back_grad))
+		difference = back_gradient - numerical_gradient
+		
+		# Compute L2-length and return.
+		back_gradient_length = np.sqrt(np.dot(back_gradient, back_gradient))
+		numerical_gradient_length = np.sqrt(np.dot(numerical_gradient, numerical_gradient))
+		difference_length = np.sqrt(np.dot(difference, difference))
+		constant = difference_length / (numerical_gradient_length + back_gradient_length)
+		
+		# Return
+		if detail == False: return constant
+		else: return constant, difference, numerical_gradient, back_gradient, info
