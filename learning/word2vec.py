@@ -50,15 +50,20 @@ class ProcessCorpus:
 
 
 
-class Word2Vec:
+class SkipGram:
 	# Initialize.
-	def __init__(self, corpus, dimensions=10):
+	# dimensions: The dimension of the encoding.
+	# window: The size of the window taking during training.
+	def __init__(self, corpus, dimensions=10, window=4):
 		# Get corpus.
 		self.processed_corpus = ProcessCorpus(corpus)
 		
 		# Randomly initialize matrix encoding.
 		self.encoding_center_matrix = np.random.rand(self.processed_corpus.vocabulary_size(), dimensions) / 1e3
 		self.encoding_context_matrix = np.random.rand(self.processed_corpus.vocabulary_size(), dimensions) / 1e3
+		
+		# Window initialization.
+		self.window = window
 
 
 	# Get the vector encoding of a given word.
@@ -90,7 +95,8 @@ class Word2Vec:
 
 
 	# Get the probability of center word due to context word.
-	def probability(self, center, context):
+	# Softmax function implementation.
+	def probability_from_string(self, center, context):
 		center_encoding = self.vector_encoding(center)
 		context_encoding = self.vector_encoding(context)
 		product = np.dot(center_encoding, context_encoding)
@@ -100,4 +106,10 @@ class Word2Vec:
 		return num / np.sum(den)
 
 
-
+	def probability_from_encoding(self, center, context):
+		product = np.dot(center, context)
+		total = np.dot(self.encoding_context_matrix, center.T)
+		num = np.exp(product - np.max(total))
+		den = np.exp(total - np.max(total))
+		return num / np.sum(den)
+	
