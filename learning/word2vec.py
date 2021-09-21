@@ -22,22 +22,27 @@ class ProcessCorpus:
 		
 		# Get the corpus and create vocabulary.
 		self.words = corpus.lower().split(' ')
-		self.create_vocabulary()
+		self.create_vocabulary_and_corpus()
 		
 
-	def create_vocabulary(self):
+	def create_vocabulary_and_corpus(self):
 		self.vocabulary = []
+		self.corpus = []
+		
 		for word in self.words:
 			was_appended = False
 			for token in self.isolated:
 				if token in word:
 					item = word.replace(token, '')
+					
+					self.corpus.append(item)
 					if item not in self.vocabulary:
 						self.vocabulary.append(item)
 						was_appended = True
 						break
 			
 			if was_appended == False:
+				self.corpus.append(word)
 				if word not in self.vocabulary:
 					self.vocabulary.append(word)
 		
@@ -52,15 +57,15 @@ class ProcessCorpus:
 
 class SkipGram:
 	# Initialize.
-	# dimensions: The dimension of the encoding.
+	# dimension: The dimension of the encoding.
 	# window: The size of the window taking during training.
-	def __init__(self, corpus, dimensions=10, window=4):
+	def __init__(self, corpus, dimension=10, window=4):
 		# Get corpus.
 		self.processed_corpus = ProcessCorpus(corpus)
 		
 		# Randomly initialize matrix encoding.
-		self.encoding_center_matrix = np.random.rand(self.processed_corpus.vocabulary_size(), dimensions) / 1e3
-		self.encoding_context_matrix = np.random.rand(self.processed_corpus.vocabulary_size(), dimensions) / 1e3
+		self.encoding_center_matrix = np.random.rand(self.processed_corpus.vocabulary_size(), dimension) / 1e3
+		self.encoding_context_matrix = np.random.rand(self.processed_corpus.vocabulary_size(), dimension) / 1e3
 		
 		# Window initialization.
 		self.window = window
@@ -93,7 +98,6 @@ class SkipGram:
 			raise ValueError('Invalid type.')
 
 
-
 	# Get the probability of center word due to context word.
 	# Softmax function implementation.
 	def probability_from_string(self, center, context):
@@ -106,10 +110,14 @@ class SkipGram:
 		return num / np.sum(den)
 
 
+	# This function is vectorized. Works for multiple centers and multiple contexts.
 	def probability_from_encoding(self, center, context):
-		product = np.dot(center, context)
+		product = np.dot(center, context.T)
 		total = np.dot(self.encoding_context_matrix, center.T)
-		num = np.exp(product - np.max(total))
-		den = np.exp(total - np.max(total))
-		return num / np.sum(den)
-	
+		mx = np.max(total, axis=0)
+		num = np.exp(product - mx)
+		den = np.exp(total - mx)
+		return (num / np.sum(den, axis=0)).T
+
+
+
